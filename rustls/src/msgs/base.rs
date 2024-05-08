@@ -9,7 +9,7 @@ use crate::msgs::codec;
 use crate::msgs::codec::{Codec, Reader};
 
 /// An externally length'd payload
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Payload<'a> {
     Borrowed(&'a [u8]),
     Owned(Vec<u8>),
@@ -73,11 +73,11 @@ impl<'a> Codec<'a> for CertificateDer<'a> {
     }
 }
 
-impl fmt::Debug for Payload<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        hex(f, self.bytes())
-    }
-}
+// impl fmt::Debug for Payload<'_> {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         hex(f, self.bytes())
+//     }
+// }
 
 /// An arbitrary, unknown-content, u24-length-prefixed payload
 #[derive(Clone, Eq, PartialEq)]

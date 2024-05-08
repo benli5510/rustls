@@ -292,6 +292,7 @@ impl Hkdf for RingHkdf {
     }
 }
 
+#[derive(Debug)]
 struct RingHkdfExpander {
     alg: hkdf::Algorithm,
     prk: hkdf::Prk,

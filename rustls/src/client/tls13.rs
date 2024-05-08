@@ -1,3 +1,5 @@
+use std::println;
+
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec;
@@ -698,6 +700,7 @@ impl State<ClientConnectionData> for ExpectCertificateVerify<'_> {
     where
         Self: 'm,
     {
+        println!("---- tls1.3 ExpectServerDone handle");
         let cert_verify = require_handshake_msg!(
             m,
             HandshakeType::CertificateVerify,
@@ -1096,10 +1099,13 @@ impl State<ClientConnectionData> for ExpectTraffic {
     where
         Self: 'm,
     {
+        println!("--- handle traffic {:?}", m);
         match m.payload {
-            MessagePayload::ApplicationData(payload) => cx
-                .common
-                .take_received_plaintext(payload),
+            MessagePayload::ApplicationData(payload) => {
+                println!("--- handle traffic appli  {:?}, ", payload);
+                cx.common
+                    .take_received_plaintext(payload)
+            }
             MessagePayload::Handshake {
                 parsed:
                     HandshakeMessagePayload {

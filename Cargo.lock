@@ -2228,8 +2228,10 @@ name = "rustls-examples"
 version = "0.0.1"
 dependencies = [
  "async-std",
+ "chacha20poly1305",
  "docopt",
  "env_logger",
+ "hmac",
  "log",
  "mio",
  "rcgen",
@@ -2238,6 +2240,7 @@ dependencies = [
  "rustls-pki-types",
  "serde",
  "serde_derive",
+ "sha2",
  "tokio",
  "webpki-roots 0.26.1",
 ]

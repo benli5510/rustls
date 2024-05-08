@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use core::fmt;
+use std::println;
 
 use pki_types::{CertificateDer, ServerName, SignatureVerificationAlgorithm, UnixTime};
 
@@ -148,6 +149,7 @@ pub fn verify_tls12_signature(
     dss: &DigitallySignedStruct,
     supported_schemes: &WebPkiSupportedAlgorithms,
 ) -> Result<HandshakeSignatureValid, Error> {
+    println!("--- 11 verify_tls12_signature");
     let possible_algs = supported_schemes.convert_scheme(dss.scheme)?;
     let cert = webpki::EndEntityCert::try_from(cert).map_err(pki_error)?;
 
@@ -176,6 +178,7 @@ pub fn verify_tls13_signature(
     dss: &DigitallySignedStruct,
     supported_schemes: &WebPkiSupportedAlgorithms,
 ) -> Result<HandshakeSignatureValid, Error> {
+    println!("--- 11 supported_in_tls13");
     if !dss.scheme.supported_in_tls13() {
         return Err(PeerMisbehaved::SignedHandshakeWithUnadvertisedSigScheme.into());
     }
@@ -210,6 +213,7 @@ pub(crate) fn verify_server_cert_signed_by_trust_anchor_impl(
     now: UnixTime,
     supported_algs: &[&dyn SignatureVerificationAlgorithm],
 ) -> Result<(), Error> {
+    println!("--- 11 verify_server_cert_signed_by_trust_anchor_impl");
     let result = cert.0.verify_for_usage(
         supported_algs,
         &roots.roots,

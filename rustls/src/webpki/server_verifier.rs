@@ -1,3 +1,5 @@
+use std::println;
+
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 
@@ -218,6 +220,7 @@ impl ServerCertVerifier for WebPkiServerVerifier {
         ocsp_response: &[u8],
         now: UnixTime,
     ) -> Result<ServerCertVerified, Error> {
+        println!("--- 1234 verify_server_cert");
         let cert = ParsedCertificate::try_from(end_entity)?;
 
         let crl_refs = self.crls.iter().collect::<Vec<_>>();
@@ -263,6 +266,7 @@ impl ServerCertVerifier for WebPkiServerVerifier {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, Error> {
+        println!("--- 1234 verify_tls12_signature");
         verify_tls12_signature(message, cert, dss, &self.supported)
     }
 
@@ -272,10 +276,12 @@ impl ServerCertVerifier for WebPkiServerVerifier {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, Error> {
+        println!("--- 1234 verify_tls13_signature");
         verify_tls13_signature(message, cert, dss, &self.supported)
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        println!("--- 1234 supported_verify_schemes");
         self.supported.supported_schemes()
     }
 }

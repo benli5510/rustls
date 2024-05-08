@@ -17,6 +17,7 @@ use crate::msgs::handshake::SessionId;
 use crate::tls12::Tls12CipherSuite;
 use crate::tls13::Tls13CipherSuite;
 
+#[derive(Debug)]
 pub(crate) struct Retrieved<T> {
     pub(crate) value: T,
     retrieved_at: UnixTime,

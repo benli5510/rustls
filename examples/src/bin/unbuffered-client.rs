@@ -268,7 +268,7 @@ fn encrypt_http_request(
     }
 }
 
-const SERVER_NAME: &str = "example.com";
+const SERVER_NAME: &str = "www.rust-lang.org";
 const PORT: u16 = 443;
 
 const KB: usize = 1024;

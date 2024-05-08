@@ -22,7 +22,8 @@
 use std::io::{self, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
-use std::{fs, process, str};
+use std::time::Duration;
+use std::{fs, process, str, thread};
 
 use docopt::Docopt;
 use mio::net::TcpStream;
@@ -57,7 +58,7 @@ impl TlsClient {
     }
 
     /// Handles events sent to the TlsClient by mio::Poll
-    fn ready(&mut self, ev: &mio::event::Event) {
+    fn ready(&mut self, ev: &mio::event::Event) -> bool {
         assert_eq!(ev.token(), CLIENT);
 
         if ev.is_readable() {
@@ -70,8 +71,10 @@ impl TlsClient {
 
         if self.is_closed() {
             println!("Connection closed");
-            process::exit(if self.clean_closure { 0 } else { 1 });
+            // process::exit(if self.clean_closure { 0 } else { 1 });
+            return true;
         }
+        false
     }
 
     fn read_source_to_end(&mut self, rd: &mut dyn io::Read) -> io::Result<usize> {
@@ -131,9 +134,9 @@ impl TlsClient {
                 .reader()
                 .read_exact(&mut plaintext)
                 .unwrap();
-            io::stdout()
-                .write_all(&plaintext)
-                .unwrap();
+            // io::stdout()
+            //     .write_all(&plaintext)
+            //     .unwrap();
         }
 
         // If that fails, the peer might have started a clean TLS-level
@@ -354,6 +357,7 @@ mod danger {
             _ocsp: &[u8],
             _now: UnixTime,
         ) -> Result<rustls::client::danger::ServerCertVerified, rustls::Error> {
+            println!("---- 22 verify_server_cert: 11{_end_entity:?}, 22{_intermediates:?}, {_server_name:?}, {_ocsp:?}, {_now:?}");
             Ok(rustls::client::danger::ServerCertVerified::assertion())
         }
 
@@ -363,6 +367,7 @@ mod danger {
             cert: &CertificateDer<'_>,
             dss: &DigitallySignedStruct,
         ) -> Result<HandshakeSignatureValid, rustls::Error> {
+            println!("---- 22 verify_tls12_signature");
             verify_tls12_signature(
                 message,
                 cert,
@@ -377,6 +382,8 @@ mod danger {
             cert: &CertificateDer<'_>,
             dss: &DigitallySignedStruct,
         ) -> Result<HandshakeSignatureValid, rustls::Error> {
+            println!("---- 22 verify_tls13_signature: {message:?}, {cert:?}, {dss:?}");
+
             verify_tls13_signature(
                 message,
                 cert,
@@ -386,6 +393,7 @@ mod danger {
         }
 
         fn supported_verify_schemes(&self) -> Vec<rustls::SignatureScheme> {
+            println!("---- 22 supported_verify_schemes");
             self.0
                 .signature_verification_algorithms
                 .supported_schemes()
@@ -477,6 +485,8 @@ fn make_config(args: &Args) -> Arc<rustls::ClientConfig> {
             )));
     }
 
+    config.enable_secret_extraction = true;
+
     Arc::new(config)
 }
 
@@ -484,12 +494,14 @@ fn make_config(args: &Args) -> Arc<rustls::ClientConfig> {
 /// somewhere.
 fn main() {
     let version = env!("CARGO_PKG_NAME").to_string() + ", version: " + env!("CARGO_PKG_VERSION");
+    println!("--- version {version:?}");
 
     let args: Args = Docopt::new(USAGE)
         .map(|d| d.help(true))
         .map(|d| d.version(Some(version)))
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
+    println!("--- args {:?}", args);
 
     if args.flag_verbose {
         env_logger::Builder::new()
@@ -506,33 +518,43 @@ fn main() {
         .unwrap()
         .next()
         .unwrap();
+    println!("-- sock addr {sock_addr:?}");
     let sock = TcpStream::connect(sock_addr).unwrap();
     let server_name = ServerName::try_from(args.arg_hostname.as_str())
         .expect("invalid DNS name")
         .to_owned();
+    println!("-- server {:?}", server_name);
+
     let mut tlsclient = TlsClient::new(sock, server_name, config);
+    println!("--- 1");
 
     if args.flag_http {
+        println!("--- 2");
         let httpreq = format!(
-            "GET / HTTP/1.0\r\nHost: {}\r\nConnection: \
+            "GET {} HTTP/1.0\r\nHost: {}\r\nConnection: \
                                close\r\nAccept-Encoding: identity\r\n\r\n",
-            args.arg_hostname
+            "/",
+            args.arg_hostname //api/v3/avgPrice?symbol=BTCUSDT
         );
+        println!("--- http request {}", httpreq);
         tlsclient
             .write_all(httpreq.as_bytes())
             .unwrap();
     } else {
+        println!("--- 3");
         let mut stdin = io::stdin();
         tlsclient
             .read_source_to_end(&mut stdin)
             .unwrap();
     }
+    println!("--- 4");
 
     let mut poll = mio::Poll::new().unwrap();
     let mut events = mio::Events::with_capacity(32);
     tlsclient.register(poll.registry());
 
     loop {
+        println!("--- 5");
         match poll.poll(&mut events, None) {
             Ok(_) => {}
             // Polling can be interrupted (e.g. by a debugger) - retry if so.
@@ -541,9 +563,21 @@ fn main() {
                 panic!("poll failed: {:?}", e)
             }
         }
+        println!("--- 6");
 
         for ev in events.iter() {
-            tlsclient.ready(ev);
+            println!("--- 7");
+            let ret = tlsclient.ready(ev);
+            if ret {
+                thread::sleep(Duration::from_secs(5));
+                let sk = tlsclient
+                    .tls_conn
+                    .dangerous_extract_secrets()
+                    .unwrap();
+                println!("--- session key {:?}", sk.tx);
+                println!("--- session key {:?}", sk.rx);
+                process::exit(0);
+            }
             tlsclient.reregister(poll.registry());
         }
     }

@@ -1,3 +1,5 @@
+use std::println;
+
 use alloc::boxed::Box;
 
 use chacha20poly1305::aead::Buffer;
@@ -117,6 +119,7 @@ impl MessageDecrypter for Tls13Cipher {
         mut m: InboundOpaqueMessage<'a>,
         seq: u64,
     ) -> Result<InboundPlainMessage<'a>, rustls::Error> {
+        println!("---- tls decrypt message: {:?}", m);
         let payload = &mut m.payload;
         let nonce = chacha20poly1305::Nonce::from(Nonce::new(&self.1, seq).0);
         let aad = make_tls13_aad(payload.len());
@@ -161,6 +164,7 @@ impl MessageDecrypter for Tls12Cipher {
         mut m: InboundOpaqueMessage<'a>,
         seq: u64,
     ) -> Result<InboundPlainMessage<'a>, rustls::Error> {
+        println!("---- message: {:?}", m);
         let payload = &m.payload;
         let nonce = chacha20poly1305::Nonce::from(Nonce::new(&self.1, seq).0);
         let aad = make_tls12_aad(

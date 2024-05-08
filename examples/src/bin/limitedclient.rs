@@ -2,7 +2,7 @@
 //! so that unused cryptography in rustls can be discarded by the linker.  You can
 //! observe using `nm` that the binary of this program does not contain any AES code.
 
-use std::io::{stdout, Read, Write};
+use std::io::{/* stdout, */ Read, Write};
 use std::net::TcpStream;
 use std::sync::Arc;
 
@@ -30,7 +30,10 @@ fn main() {
 
     let server_name = "www.rust-lang.org".try_into().unwrap();
     let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
+    println!("----- before");
     let mut sock = TcpStream::connect("www.rust-lang.org:443").unwrap();
+    // let mut sock = TcpStream::connect("184.72.1.148:443").unwrap();
+    println!("----- after");
     let mut tls = rustls::Stream::new(&mut conn, &mut sock);
     tls.write_all(
         concat!(
@@ -40,20 +43,23 @@ fn main() {
             "Accept-Encoding: identity\r\n",
             "\r\n"
         )
-        .as_bytes(),
+        .as_bytes(), //api/v3/avgPrice?symbol=BTCUSDT
     )
     .unwrap();
     let ciphersuite = tls
         .conn
         .negotiated_cipher_suite()
         .unwrap();
-    writeln!(
-        &mut std::io::stderr(),
+    println!(
+        // &mut std::io::stderr(),
         "Current ciphersuite: {:?}",
         ciphersuite.suite()
-    )
-    .unwrap();
+    );
+    // .unwrap();
+    // println!("Connect {:?}", tls.conn.peer_certificates());
+    println!("Connect {:?}", tls.conn.protocol_version());
+
     let mut plaintext = Vec::new();
     tls.read_to_end(&mut plaintext).unwrap();
-    stdout().write_all(&plaintext).unwrap();
+    // stdout().write_all(&plaintext).unwrap();
 }

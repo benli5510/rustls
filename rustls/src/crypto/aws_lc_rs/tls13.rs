@@ -1,3 +1,5 @@
+use std::println;
+
 use alloc::boxed::Box;
 
 use aws_lc_rs::hkdf::KeyType;
@@ -260,6 +262,7 @@ impl MessageDecrypter for AeadMessageDecrypter {
         mut msg: InboundOpaqueMessage<'a>,
         seq: u64,
     ) -> Result<InboundPlainMessage<'a>, Error> {
+        println!("--- MessageDecrypter AeadMessageDecrypter");
         let payload = &mut msg.payload;
         if payload.len() < self.dec_key.algorithm().tag_len() {
             return Err(Error::DecryptError);
@@ -324,6 +327,7 @@ impl MessageDecrypter for GcmMessageDecrypter {
         mut msg: InboundOpaqueMessage<'a>,
         seq: u64,
     ) -> Result<InboundPlainMessage<'a>, Error> {
+        println!("--- MessageDecrypter GcmMessageDecrypter: msg {:?}", msg);
         let payload = &mut msg.payload;
         if payload.len() < self.dec_key.algorithm().tag_len() {
             return Err(Error::DecryptError);
@@ -385,6 +389,7 @@ impl Hkdf for RingHkdf {
     }
 }
 
+#[derive(Debug)]
 struct RingHkdfExpander {
     alg: hkdf::Algorithm,
     prk: hkdf::Prk,

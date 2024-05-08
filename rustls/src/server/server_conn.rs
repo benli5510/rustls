@@ -962,6 +962,7 @@ impl Debug for Accepted {
     }
 }
 
+#[derive(Debug)]
 struct Accepting;
 
 impl State<ServerConnectionData> for Accepting {

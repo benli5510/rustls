@@ -4,6 +4,7 @@ use core::mem;
 use core::ops::{Deref, DerefMut};
 #[cfg(feature = "std")]
 use std::io;
+use std::println;
 
 use crate::common_state::{CommonState, Context, IoState, State, DEFAULT_BUFFER_LIMIT};
 use crate::enums::{AlertDescription, ContentType};
@@ -23,7 +24,7 @@ mod connection {
     use alloc::vec::Vec;
     use core::fmt::Debug;
     use core::ops::{Deref, DerefMut};
-    use std::io;
+    use std::{io, println};
 
     use crate::common_state::{CommonState, IoState};
     use crate::error::Error;
@@ -79,6 +80,7 @@ mod connection {
         ///
         /// See [`ConnectionCommon::process_new_packets()`] for more information.
         pub fn process_new_packets(&mut self) -> Result<IoState, Error> {
+            println!("--- 000process_new_packets");
             match self {
                 Self::Client(conn) => conn.process_new_packets(),
                 Self::Server(conn) => conn.process_new_packets(),
@@ -394,6 +396,7 @@ impl<Data> ConnectionCommon<Data> {
     /// [`process_new_packets`]: Connection::process_new_packets
     #[inline]
     pub fn process_new_packets(&mut self) -> Result<IoState, Error> {
+        println!("\n--- 11process_new_packets");
         self.core
             .process_new_packets(&mut self.deframer_buffer, &mut self.sendable_plaintext)
     }
@@ -546,6 +549,7 @@ impl<Data> ConnectionCommon<Data> {
         Self: Sized,
         T: io::Read + io::Write,
     {
+        println!("---- complete_io");
         let mut eof = false;
         let mut wrlen = 0;
         let mut rdlen = 0;
@@ -758,6 +762,7 @@ impl<Data> ConnectionCore<Data> {
         deframer_buffer: &mut DeframerVecBuffer,
         sendable_plaintext: &mut ChunkVecBuffer,
     ) -> Result<IoState, Error> {
+        println!("--- process_new_packets: ");
         let mut state = match mem::replace(&mut self.state, Err(Error::HandshakeNotComplete)) {
             Ok(state) => state,
             Err(e) => {
@@ -867,6 +872,11 @@ impl<Data> ConnectionCore<Data> {
         state: Box<dyn State<Data>>,
         sendable_plaintext: Option<&mut ChunkVecBuffer>,
     ) -> Result<Box<dyn State<Data>>, Error> {
+        println!(
+            "--- process_msg --- {:?} -- {:?} -- {:?}",
+            msg.typ, msg.version, msg.payload
+        );
+
         // Drop CCS messages during handshake in TLS1.3
         if msg.typ == ContentType::ChangeCipherSpec
             && !self

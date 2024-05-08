@@ -172,7 +172,7 @@ impl dyn MessageDecrypter {
 }
 
 /// A write or read IV.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Iv([u8; NONCE_LEN]);
 
 impl Iv {
@@ -271,6 +271,7 @@ const TLS12_AAD_SIZE: usize = 8 + 1 + 2 + 2;
 /// A key for an AEAD algorithm.
 ///
 /// This is a value type for a byte string up to `AeadKey::MAX_LEN` bytes in length.
+#[derive(Debug)]
 pub struct AeadKey {
     buf: [u8; Self::MAX_LEN],
     used: usize,

@@ -35,6 +35,7 @@ impl<'a> ServerCertDetails<'a> {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct ClientHelloDetails {
     pub(super) sent_extensions: Vec<ExtensionType>,
     pub(super) extension_order_seed: u16,

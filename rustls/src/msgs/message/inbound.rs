@@ -11,6 +11,7 @@ use crate::msgs::fragmenter::MAX_FRAGMENT_LEN;
 ///
 /// This inbound type borrows its encrypted payload from a `[MessageDeframer]`.
 /// It is used for joining and is consumed by decryption.
+#[derive(Debug)]
 pub struct InboundOpaqueMessage<'a> {
     pub typ: ContentType,
     pub version: ProtocolVersion,
@@ -81,6 +82,7 @@ impl<'a> InboundOpaqueMessage<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct BorrowedPayload<'a>(&'a mut [u8]);
 
 impl Deref for BorrowedPayload<'_> {

@@ -1,5 +1,6 @@
 use alloc::boxed::Box;
 use core::num::NonZeroU64;
+use std::println;
 
 use crate::crypto::cipher::{InboundOpaqueMessage, MessageDecrypter, MessageEncrypter};
 use crate::error::Error;
@@ -62,6 +63,7 @@ impl RecordLayer {
         &mut self,
         encr: InboundOpaqueMessage<'a>,
     ) -> Result<Option<Decrypted<'a>>, Error> {
+        println!("--- decrypt_incoming {:?}", encr);
         if self.decrypt_state != DirectionState::Active {
             return Ok(Some(Decrypted {
                 want_close_before_decrypt: false,

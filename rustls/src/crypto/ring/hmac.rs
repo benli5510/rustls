@@ -29,6 +29,7 @@ impl crypto::hmac::Hmac for Hmac {
     }
 }
 
+#[derive(Debug)]
 struct Key(ring_like::hmac::Key);
 
 impl crypto::hmac::Key for Key {
