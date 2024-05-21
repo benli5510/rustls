@@ -11,13 +11,14 @@ use std::sync::Arc;
 use rustls::crypto::{aws_lc_rs as provider, CryptoProvider};
 
 mod danger {
-    use std::cell::RefCell;
-    use std::sync::{Arc, RwLock};
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::Path;
 
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
     use pki_types::{CertificateDer, ServerName, UnixTime};
     use rustls::client::danger::HandshakeSignatureValid;
     use rustls::crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider};
-    use rustls::lock::Mutex;
     // use rustls::webpki::verify::{
     //     verify_server_cert_signed_by_trust_anchor_impl, verify_tls12_signature,
     //     verify_tls13_signature, ParsedCertificate,
@@ -37,8 +38,6 @@ mod danger {
                 // stores: Vec::new(),
             }
         }
-
-        pub fn push() {}
     }
 
     impl rustls::client::danger::ServerCertVerifier for MyCertificateVerification {
@@ -51,44 +50,57 @@ mod danger {
             now: UnixTime,
         ) -> Result<rustls::client::danger::ServerCertVerified, rustls::Error> {
             println!("---- 22 verify_server_cert: 11{end_entity:?}, 22{intermediates:?}, {server_name:?}, {ocsp:?}, {now:?}");
+
+            let b64 = STANDARD.encode(end_entity);
+            let filename = "cert.pem".to_string();
+            let path = Path::new(&filename);
+            let mut file = File::create(path).unwrap();
+            file.write_all(b"-----BEGIN CERTIFICATE-----\n")
+                .unwrap();
+            file.write_all(b64.as_bytes()).unwrap();
+            file.write_all(b"\n-----END CERTIFICATE-----")
+                .unwrap();
+            println!("Certificate  written to {}", filename);
+
             Ok(rustls::client::danger::ServerCertVerified::assertion())
-            // let cert = ParsedCertificate::try_from(end_entity)?;
 
-            // let crl_refs = self.crls.iter().collect::<Vec<_>>();
+            /* let cert = ParsedCertificate::try_from(end_entity)?;
 
-            // let revocation = if self.crls.is_empty() {
-            //     None
-            // } else {
-            //     // Note: unwrap here is safe because RevocationOptionsBuilder only errors when given
-            //     //       empty CRLs.
-            //     Some(
-            //         webpki::RevocationOptionsBuilder::new(crl_refs.as_slice())
-            //             // Note: safe to unwrap here - new is only fallible if no CRLs are provided
-            //             //       and we verify this above.
-            //             .unwrap()
-            //             .with_depth(self.revocation_check_depth)
-            //             .with_status_policy(self.unknown_revocation_policy)
-            //             .build(),
-            //     )
-            // };
+            let crl_refs = self.crls.iter().collect::<Vec<_>>();
 
-            // // Note: we use the crate-internal `_impl` fn here in order to provide revocation
-            // // checking information, if applicable.
-            // verify_server_cert_signed_by_trust_anchor_impl(
-            //     &cert,
-            //     &self.roots,
-            //     intermediates,
-            //     revocation,
-            //     now,
-            //     self.supported.all,
-            // )?;
+            let revocation = if self.crls.is_empty() {
+                None
+            } else {
+                // Note: unwrap here is safe because RevocationOptionsBuilder only errors when given
+                //       empty CRLs.
+                Some(
+                    webpki::RevocationOptionsBuilder::new(crl_refs.as_slice())
+                        // Note: safe to unwrap here - new is only fallible if no CRLs are provided
+                        //       and we verify this above.
+                        .unwrap()
+                        .with_depth(self.revocation_check_depth)
+                        .with_status_policy(self.unknown_revocation_policy)
+                        .build(),
+                )
+            };
 
-            // if !ocsp_response.is_empty() {
-            //     trace!("Unvalidated OCSP response: {:?}", ocsp_response.to_vec());
-            // }
+            // Note: we use the crate-internal `_impl` fn here in order to provide revocation
+            // checking information, if applicable.
+            verify_server_cert_signed_by_trust_anchor_impl(
+                &cert,
+                &self.roots,
+                intermediates,
+                revocation,
+                now,
+                self.supported.all,
+            )?;
 
-            // verify_server_name(&cert, server_name)?;
-            // Ok(ServerCertVerified::assertion())
+            if !ocsp_response.is_empty() {
+                trace!("Unvalidated OCSP response: {:?}", ocsp_response.to_vec());
+            }
+
+            verify_server_name(&cert, server_name)?;
+            Ok(ServerCertVerified::assertion()) */
         }
 
         fn verify_tls12_signature(
@@ -487,7 +499,7 @@ pub static TLS13_CHACHA20_POLY1305_SHA256: rustls::SupportedCipherSuite =
 //         sign: &[
 //             rustls::SignatureScheme::RSA_PSS_SHA256,
 //             rustls::SignatureScheme::RSA_PKCS1_SHA256,
-//         ],
+//         ],re
 //         prf_provider: &rustls::crypto::tls12::PrfUsingHmac(&hmac::Sha256Hmac),
 //         aead_alg: &aead::Chacha20Poly1305,
 //     });
@@ -520,10 +532,11 @@ fn main() {
     // To extract session key
     config.enable_secret_extraction = true;
 
-    let host_name = "example.com";
+    let host_name = "test.alux.fun";
 
     let server_name = host_name.try_into().unwrap();
     println!("--- server name {:?}", server_name);
+
     let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
     let mut sock = TcpStream::connect(format!("{host_name}:443")).unwrap();
     // let mut sock = TcpStream::connect("184.72.1.148:443").unwrap();

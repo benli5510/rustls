@@ -2228,6 +2228,7 @@ name = "rustls-examples"
 version = "0.0.1"
 dependencies = [
  "async-std",
+ "base64 0.22.0",
  "chacha20poly1305",
  "docopt",
  "env_logger",
